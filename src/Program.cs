@@ -10,9 +10,9 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
-app.MapPost("/publish", ([FromBody] MessageInput input, IQueueService queue) =>
+app.MapPost("/publish", async ([FromBody] MessageInput input, IQueueService queue) =>
 {
-    queue.Pub(input.ToString());
+    await queue.Pub(input.ToString());
 
     return Results.NoContent();
 });
