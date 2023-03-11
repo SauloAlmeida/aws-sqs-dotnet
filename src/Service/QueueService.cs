@@ -1,7 +1,6 @@
 ﻿using Amazon;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Newtonsoft.Json;
 
 namespace AWSSQSDotnet.Service
 {
@@ -28,7 +27,7 @@ namespace AWSSQSDotnet.Service
             var request = new SendMessageRequest
             {
                 QueueUrl = queueResponse.QueueUrl,
-                MessageBody = JsonConvert.SerializeObject(message)
+                MessageBody = message
             };
 
             var response = await SQSClient.SendMessageAsync(request);
