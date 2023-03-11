@@ -16,8 +16,8 @@ namespace AWSSQSDotnet.Service
 
         public QueueService()
         {
-            SQSClient = new AmazonSQSClient("",
-                                            "",
+            SQSClient = new AmazonSQSClient(Environment.GetEnvironmentVariable("QUEUE_ACCESS_KEY"),
+                                            Environment.GetEnvironmentVariable("QUEUE_SECRET_KEY"),
                                             RegionEndpoint.USEast2);
         }
 
