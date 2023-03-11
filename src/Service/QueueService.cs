@@ -1,39 +1,76 @@
 ﻿using Amazon;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using AWSSQSDotnet.DTO;
+using System.Net;
 
 namespace AWSSQSDotnet.Service
 {
     public interface IQueueService
     {
-        Task Pub(string message);
+        Task PublishAsync(string message);
+        Task<IEnumerable<MessageOuput>> ConsumeAsync(CancellationToken ct);
+        Task DeleteMessageAsync(MessageOuput message);
     }
 
     public class QueueService : IQueueService
     {
         private readonly AmazonSQSClient SQSClient;
+        private readonly string QUEUE_URL;
 
         public QueueService()
         {
             SQSClient = new AmazonSQSClient(Environment.GetEnvironmentVariable("QUEUE_ACCESS_KEY"),
                                             Environment.GetEnvironmentVariable("QUEUE_SECRET_KEY"),
                                             RegionEndpoint.USEast2);
+
+            QUEUE_URL = GetQueueUrl();
         }
 
-        public async Task Pub(string message)
+        private string GetQueueUrl()
         {
-            var queueResponse = await SQSClient.GetQueueUrlAsync("AWS-SQS-DOTNET-STANDARD");
+            string queueName = Environment.GetEnvironmentVariable("QUEUE_NAME");
 
+            return SQSClient.GetQueueUrlAsync(queueName).GetAwaiter().GetResult().QueueUrl;
+        }
+
+        public async Task<IEnumerable<MessageOuput>> ConsumeAsync(CancellationToken ct)
+        {
+            try
+            {
+                var response = await SQSClient.ReceiveMessageAsync(QUEUE_URL, ct);
+
+                if (response?.Messages?.Any() is false) return Enumerable.Empty<MessageOuput>();
+
+                return response.Messages.Select(s => new MessageOuput()
+                {
+                    Id = s.MessageId,
+                    ReceiptId = s.ReceiptHandle,
+                    Content = s.Body
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return Enumerable.Empty<MessageOuput>();
+            }
+        }
+
+        public async Task PublishAsync(string message)
+        {
             var request = new SendMessageRequest
             {
-                QueueUrl = queueResponse.QueueUrl,
+                QueueUrl = QUEUE_URL,
                 MessageBody = message
             };
 
             var response = await SQSClient.SendMessageAsync(request);
 
-            if (response.HttpStatusCode is not System.Net.HttpStatusCode.OK)
-                throw new Exception("It was not possible to send message to the queue.");
+            if (response.HttpStatusCode is HttpStatusCode.OK) return;
+
+            throw new Exception("It was not possible to send message to the queue.");
         }
+
+        public async Task DeleteMessageAsync(MessageOuput message) => await SQSClient.DeleteMessageAsync(QUEUE_URL, message.ReceiptId);
     }
 }

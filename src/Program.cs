@@ -1,27 +1,19 @@
+using AWSSQSDotnet.DTO;
 using AWSSQSDotnet.Service;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<IQueueService, QueueService>();
+builder.Services.AddSingleton<IQueueService, QueueService>();
+builder.Services.AddHostedService<ConsumerBackgroundService>();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-
-app.MapPost("/publish", async ([FromBody] MessageInput input, IQueueService queue) =>
+app.MapPost("/publish", async ([FromBody] ModelInput input, IQueueService queue) =>
 {
-    await queue.Pub(input.ToString());
+    await queue.PublishAsync(input.ToString());
 
     return Results.NoContent();
 });
 
 app.Run();
-
-public class MessageInput
-{
-    public string Message { get; set; }
-
-    public override string ToString() => JsonConvert.SerializeObject(this);
-}

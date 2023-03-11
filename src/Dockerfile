@@ -12,7 +12,9 @@ ENV ASPNETCORE_URLS=http://+:5000
 
 ENV QUEUE_ACCESS_KEY=
 ENV QUEUE_SECRET_KEY=
+ENV QUEUE_NAME=
+
 
 ENTRYPOINT ["dotnet", "AWSSQSDotnet.dll"]
 
-# docker run -p 5000:5000  --name aws-sqs-dotnet-api aws-sqs-dotnet
+# docker run -p 5000:5000 --name aws-sqs-dotnet-api aws-sqs-dotnet
